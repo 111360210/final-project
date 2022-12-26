@@ -1,0 +1,224 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctime>
+#include <time.h> 
+#include <conio.h>//判別按下的按鍵 
+#include <windows.h>//設置游標位置 
+#define WIDE 60
+#define HIGH 20
+using namespace std;
+/* run this program using the console pauser or add your own getch, system("pause") or input loop */
+
+typedef struct _body//放蛇的座標 
+{
+	int x;
+	int y;
+
+}BODY;
+
+typedef struct snake//放有關蛇的一切 
+{
+	BODY list[WIDE*HIGH];//儲存身體的每一節座標，身體最長=地圖大小 
+	int size;//蛇的身長
+	BODY food;//因為食物也有座標，所以也利用BODY結構去儲存 
+	COORD coord;//游標的位置(COORD是在windows.h裡定義的結構) 
+	int dx;//蛇向x軸移動的方向 
+	int dy;//蛇向y軸移動的方向
+	int score;//得分
+
+}SNAKE;
+
+void init_food(SNAKE *snake)
+{
+	srand(time(NULL));//設置亂數種子 
+	//初始化食物座標 
+	snake->food.x = rand() % WIDE;
+	snake->food.y = rand() % HIGH;
+}
+
+void init_snake(SNAKE *snake)
+{
+	//初始化蛇頭的x座標和y座標(預設在畫面中間) 
+	snake->list[0].x = WIDE / 2;
+	snake->list[0].y = HIGH / 2;
+	//初始化蛇尾座標 
+	snake->list[1].x = (WIDE / 2) - 1;
+	snake->list[1].y = HIGH / 2;
+	//初始化蛇的身體長度為2 
+	snake->size = 2;
+	//初始化食物的座標 
+	init_food(snake);
+	//初始化蛇的移動方向
+	snake->dx = 1;
+	snake->dy = 0;
+	//初始化分數 
+	snake->score = 0;
+
+}
+
+
+void show_ui(SNAKE *snake)//顯示蛇與食物的函式 
+{
+	//顯示蛇(顯示蛇或食物時需要設置游標的位置，否則顯示的內容都會擠在程式第一排) 
+	for (int i = 0; i < snake->size; i++)
+	{
+		snake->coord.X = snake->list[i].x;//注意X跟Y是大寫 
+		snake->coord.Y = snake->list[i].y;
+		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數) 
+		if (i == 0)
+		{
+			printf("@");
+		}
+		else
+		{
+			printf("*");//■會吃掉蛇頭的一個字元，在此改用*代替 
+		}
+
+	}
+	//顯示食物
+	snake->coord.X = snake->food.x;//注意X跟Y是大寫 
+	snake->coord.Y = snake->food.y;//注意要更改為食物的x,y座標 
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數) 
+	printf("#");
+
+
+}
+void move_snake(SNAKE *snake)
+{	//更新除了蛇頭外的蛇身座標 (前給後就不用另設暫存變數) 
+	for (int i = snake->size - 1; i > 0; i--)
+	{
+		snake->list[i] = snake->list[i-1];//把蛇身體前一節的座標指定給後一節 (list[0]是蛇頭) 
+	}
+	//更新蛇頭 
+	snake->list[0].x += snake->dx;//dx預設=1，所以一開始會往右走 
+	snake->list[0].y += snake->dy;
+
+}
+
+void control_snake(SNAKE *snake)
+{
+	char key = 0;
+	while (_kbhit())//判斷是否按下按鍵，按下!=0 
+	{
+		key = _getch();//獲取按鍵值
+	}
+	switch (key)
+	{
+	case 'a':
+		snake->dx = -1;//蛇的方向向左 
+		snake->dy = 0;
+		break;
+	case 'w':
+		snake->dx = 0;//蛇的方向向左 
+		snake->dy = -1;
+		break;
+	case 's':
+		snake->dx = 0;//蛇的方向向左 
+		snake->dy = 1;
+		break;
+	case 'd':
+		snake->dx = 1;//蛇的方向向左 
+		snake->dy = 0;
+		break;
+	}
+}
+void game_end(SNAKE *snake)
+{
+	//這裡需自行設定遊戲失敗時訊息出現的位置，否則游標會停在上一個水果出現的地方
+	snake->coord.X = 25;//注意X跟Y是大寫 
+	snake->coord.Y = 25;//注意要更改為食物的x,y座標 
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數)
+	printf("遊戲結束 得分為%d\n", snake->score);
+	Sleep(5000);
+	exit(0);//退出程式
+}
+
+void snake_eat_body(SNAKE *snake)
+{
+	//判斷蛇頭和蛇身座標是否相同
+	for (int i = 1; i < snake->size; i++)
+	{
+		if (snake->list[0].x == snake->list[i].x &&
+			snake->list[0].y == snake->list[i].y)//當x,y座標皆相同時
+			game_end(snake);//呼叫結束函數
+	}
+}
+
+void snake_eat_food(SNAKE *snake)
+{
+	if (snake->list[0].x == snake->food.x &&
+		snake->list[0].y == snake->food.y )
+	{
+		//原本的食物被蛇頭覆蓋掉後需要生成新食物
+		init_food(snake);
+		//蛇身的長度增加
+		snake->size++;
+		//增加分數
+		snake->score++;
+
+	}
+}
+
+void init_wall()
+{
+	for (int i = 0; i <= HIGH; i++)
+	{
+		for (int j = 0; j <= WIDE; j++)
+		{
+			if (i == HIGH || j == WIDE)
+			{
+				printf("+");
+			}
+			else
+			{
+				printf(" ");
+			}
+		}
+		printf("\n");
+	}
+}
+
+void start_game(SNAKE *snake)
+{
+	while (snake->list[0].x < 60 && snake->list[0].x >= 0 &&
+		snake->list[0].y < 20 && snake->list[0].y >= 0)//判斷蛇頭的座標是不是在範圍內 
+	{
+		//控制蛇的方向 
+		control_snake(snake);
+		//更新蛇的座標
+		move_snake(snake);
+		//清空螢幕(一定要放在顯示的前面)
+		system("cls");
+		//顯示邊界
+		init_wall();
+		//蛇移動 
+		show_ui(snake);
+		//蛇是否碰到自己 
+		snake_eat_body(snake);
+		//蛇是否碰到食物 
+		snake_eat_food(snake);
+		Sleep(100);//延遲0.1秒(影響貪食蛇的速度)
+	}
+	game_end(snake);
+}
+
+
+int main() 
+{
+	//隱藏游標
+	CONSOLE_CURSOR_INFO cci;
+	cci.dwSize = sizeof(cci);
+	cci.bVisible = FALSE;
+	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cci);
+
+	init_wall();//印出遊戲邊界
+	SNAKE *snake = (SNAKE *)malloc(sizeof(SNAKE));//配置一個SNAKE大小的記憶體空間，且讓指標變數*snake指向這個位址 
+	init_snake(snake);//因為上面那行的關係，不需要傳入snake結構中的三個變數便可執行初始化函式 
+	show_ui(snake);//顯示介面 
+	start_game(snake);//開始遊戲 
+	system("pause");
+	return 0;
+}

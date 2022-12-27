@@ -28,6 +28,7 @@ typedef struct snake//放有關蛇的一切
 	int dx;//蛇向x軸移動的方向 
 	int dy;//蛇向y軸移動的方向
 	int score;//得分
+	BODY body_last;//紀錄尾巴位置
 
 }SNAKE;
 
@@ -83,11 +84,20 @@ void show_ui(SNAKE *snake)//顯示蛇與食物的函式
 	snake->coord.Y = snake->food.y;//注意要更改為食物的x,y座標 
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數) 
 	printf("#");
-
+	//移動後將尾巴前一個位置顯示成空白
+	snake->coord.X = snake->body_last.x;//注意X跟Y是大寫 
+	snake->coord.Y = snake->body_last.y;//注意要更改為食物的x,y座標 
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數) 
+	printf(" ");
 
 }
 void move_snake(SNAKE *snake)
-{	//更新除了蛇頭外的蛇身座標 (前給後就不用另設暫存變數) 
+{	
+	//在尾巴座標更新前記錄其座標
+	snake->body_last.x = snake->list[snake->size - 1].x;
+	snake->body_last.y = snake->list[snake->size - 1].y;
+
+	//更新除了蛇頭外的蛇身座標 (前給後就不用另設暫存變數) 
 	for (int i = snake->size - 1; i > 0; i--)
 	{
 		snake->list[i] = snake->list[i-1];//把蛇身體前一節的座標指定給後一節 (list[0]是蛇頭) 
@@ -112,15 +122,15 @@ void control_snake(SNAKE *snake)
 		snake->dy = 0;
 		break;
 	case 'w':
-		snake->dx = 0;//蛇的方向向左 
+		snake->dx = 0;//蛇的方向向上
 		snake->dy = -1;
 		break;
 	case 's':
-		snake->dx = 0;//蛇的方向向左 
+		snake->dx = 0;//蛇的方向向下 
 		snake->dy = 1;
 		break;
 	case 'd':
-		snake->dx = 1;//蛇的方向向左 
+		snake->dx = 1;//蛇的方向向右 
 		snake->dy = 0;
 		break;
 	}
@@ -191,9 +201,9 @@ void start_game(SNAKE *snake)
 		//更新蛇的座標
 		move_snake(snake);
 		//清空螢幕(一定要放在顯示的前面)
-		system("cls");
+		//system("cls");
 		//顯示邊界
-		init_wall();
+		//init_wall();
 		//蛇移動 
 		show_ui(snake);
 		//蛇是否碰到自己 
@@ -216,7 +226,7 @@ int main()
 
 	init_wall();//印出遊戲邊界
 	SNAKE *snake = (SNAKE *)malloc(sizeof(SNAKE));//配置一個SNAKE大小的記憶體空間，且讓指標變數*snake指向這個位址 
-	init_snake(snake);//因為上面那行的關係，不需要傳入snake結構中的三個變數便可執行初始化函式 
+	init_snake(snake);//因為上面那行的關係，只要傳入一個位址即可執行函式 
 	show_ui(snake);//顯示介面 
 	start_game(snake);//開始遊戲 
 	system("pause");

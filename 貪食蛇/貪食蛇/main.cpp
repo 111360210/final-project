@@ -28,15 +28,17 @@ typedef struct snake//放有關蛇的一切
 	int dx;//蛇向x軸移動的方向 
 	int dy;//蛇向y軸移動的方向
 	int score;//得分
-
+	char temp_key = 0;//前次方向
+	char key = 0;//本次方向
+	int speed;//移動速度
 }SNAKE;
 
 void init_food(SNAKE *snake)
 {
 	srand(time(NULL));//設置亂數種子 
 	//初始化食物座標 
-	snake->food.x = rand() % WIDE;
-	snake->food.y = rand() % HIGH;
+	snake->food.x = (rand() % (WIDE - 1)) + 1;
+	snake->food.y = (rand() % (HIGH - 1)) + 1;
 }
 
 void init_snake(SNAKE *snake)
@@ -56,6 +58,8 @@ void init_snake(SNAKE *snake)
 	snake->dy = 0;
 	//初始化分數 
 	snake->score = 0;
+	//初始化速度
+	snake->speed = 800;
 
 }
 
@@ -90,7 +94,7 @@ void move_snake(SNAKE *snake)
 {	//更新除了蛇頭外的蛇身座標 (前給後就不用另設暫存變數) 
 	for (int i = snake->size - 1; i > 0; i--)
 	{
-		snake->list[i] = snake->list[i-1];//把蛇身體前一節的座標指定給後一節 (list[0]是蛇頭) 
+		snake->list[i] = snake->list[i - 1];//把蛇身體前一節的座標指定給後一節 (list[0]是蛇頭) 
 	}
 	//更新蛇頭 
 	snake->list[0].x += snake->dx;//dx預設=1，所以一開始會往右走 
@@ -98,33 +102,52 @@ void move_snake(SNAKE *snake)
 
 }
 
-void control_snake(SNAKE *snake)
-{
-	char key = 0;
-	while (_kbhit())//判斷是否按下按鍵，按下!=0 
-	{
-		key = _getch();//獲取按鍵值
-	}
-	switch (key)
-	{
-	case 'a':
-		snake->dx = -1;//蛇的方向向左 
-		snake->dy = 0;
-		break;
-	case 'w':
-		snake->dx = 0;//蛇的方向向左 
-		snake->dy = -1;
-		break;
-	case 's':
-		snake->dx = 0;//蛇的方向向左 
-		snake->dy = 1;
-		break;
-	case 'd':
-		snake->dx = 1;//蛇的方向向左 
-		snake->dy = 0;
-		break;
+char opposide_direction(char a) { //倒向
+	switch (a) {
+	case 'a': return 'd'; break;
+	case 'd': return 'a'; break;
+	case 'w': return 's'; break;
+	case 's': return 'w'; break;
 	}
 }
+
+
+void control_snake(SNAKE *snake)
+{
+	while (_kbhit())//判斷是否按下按鍵，按下!=0 
+	{
+		snake->key = _getch();//獲取按鍵值
+	}
+	if (snake->temp_key != 0 && snake->key != opposide_direction(snake->temp_key)) {
+		//判斷不為首次且不為前次方向倒向
+		switch (snake->key)
+		{
+		case 'a':
+			snake->dx = -1;//蛇的方向向左 
+			snake->dy = 0;
+			break;
+		case 'w':
+			snake->dx = 0;//蛇的方向向左 
+			snake->dy = -1;
+			break;
+		case 's':
+			snake->dx = 0;//蛇的方向向左 
+			snake->dy = 1;
+			break;
+		case 'd':
+			snake->dx = 1;//蛇的方向向左 
+			snake->dy = 0;
+			break;
+		case 32:
+			while (_getch() != 32); //按下空白暫停
+			break;
+		}
+
+	}
+	if (snake->key != opposide_direction(snake->temp_key))
+		snake->temp_key = snake->key;		//紀錄前次方向
+}
+
 void game_end(SNAKE *snake)
 {
 	//這裡需自行設定遊戲失敗時訊息出現的位置，否則游標會停在上一個水果出現的地方
@@ -150,7 +173,7 @@ void snake_eat_body(SNAKE *snake)
 void snake_eat_food(SNAKE *snake)
 {
 	if (snake->list[0].x == snake->food.x &&
-		snake->list[0].y == snake->food.y )
+		snake->list[0].y == snake->food.y)
 	{
 		//原本的食物被蛇頭覆蓋掉後需要生成新食物
 		init_food(snake);
@@ -158,7 +181,14 @@ void snake_eat_food(SNAKE *snake)
 		snake->size++;
 		//增加分數
 		snake->score++;
-
+		if (snake->speed > 300)
+			snake->speed -= 100;
+		else if (snake->speed > 100)
+			snake->speed -= 50;
+		else if (snake->speed > 10)
+			snake->speed -= 10;
+		else if (snake->speed > 0.5)
+			snake->speed -= 1.5;
 	}
 }
 
@@ -167,24 +197,18 @@ void init_wall()
 	for (int i = 0; i <= HIGH; i++)
 	{
 		for (int j = 0; j <= WIDE; j++)
-		{
-			if (i == HIGH || j == WIDE)
-			{
-				printf("+");
-			}
+			if (i == HIGH || i == 0 || j == WIDE || j == 0)
+				printf("█");
 			else
-			{
 				printf(" ");
-			}
-		}
 		printf("\n");
 	}
 }
 
 void start_game(SNAKE *snake)
 {
-	while (snake->list[0].x < 60 && snake->list[0].x >= 0 &&
-		snake->list[0].y < 20 && snake->list[0].y >= 0)//判斷蛇頭的座標是不是在範圍內 
+	while (snake->list[0].x < 60 && snake->list[0].x >= 1 &&
+		snake->list[0].y < 20 && snake->list[0].y >= 1)//判斷蛇頭的座標是不是在範圍內 
 	{
 		//控制蛇的方向 
 		control_snake(snake);
@@ -200,13 +224,13 @@ void start_game(SNAKE *snake)
 		snake_eat_body(snake);
 		//蛇是否碰到食物 
 		snake_eat_food(snake);
-		Sleep(100);//延遲0.1秒(影響貪食蛇的速度)
+		Sleep(snake->speed);//延遲0.1秒(影響貪食蛇的速度)
 	}
 	game_end(snake);
 }
 
 
-int main() 
+int main()
 {
 	//隱藏游標
 	CONSOLE_CURSOR_INFO cci;

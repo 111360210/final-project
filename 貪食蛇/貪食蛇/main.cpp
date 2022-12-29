@@ -39,8 +39,8 @@ void init_food(SNAKE *snake)
 {
 	srand(time(NULL));//設置亂數種子 
 	//初始化食物座標 
-	snake->food.x = (rand() % (WIDE - 1)) + 1;
-	snake->food.y = (rand() % (HIGH - 1)) + 1;
+	snake->food.x = (rand() % (WIDE - 1)) + 2;
+	snake->food.y = (rand() % (HIGH - 1)) + 2;
 }
 
 void init_snake(SNAKE *snake)
@@ -105,16 +105,28 @@ void show_ui(SNAKE *snake)//顯示蛇與食物的函式
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數) 
 	printf(" ");
 	//實時顯示分數
-	snake->cousor.x = 65;
+	snake->cousor.x = 64;
 	snake->cousor.y = 10;
 	set_cursor(snake);
-	printf("請使用wasd操作貪食蛇");
+	printf("╔═════════════════════════╗");
 	snake->cousor.y += 1;
 	set_cursor(snake);
-	printf("空白鍵可以暫停遊戲");
+	printf("║Ⅰ.請使用wasd操作貪食蛇  ║");
 	snake->cousor.y += 1;
 	set_cursor(snake);
-	printf("得分:%d",snake->score);
+	printf("║Ⅱ.空白鍵可以暫停遊戲    ║");
+	snake->cousor.y += 1;
+	set_cursor(snake);
+	printf("║Ⅲ.吃到「#」加一分       ║");
+	snake->cousor.y += 1;
+	set_cursor(snake);
+	printf("║Ⅳ.分數越高速度越高      ║");
+	snake->cousor.y += 1;
+	set_cursor(snake);
+	printf("╚═════════════════════════╝");
+	snake->cousor.y += 1;
+	set_cursor(snake);
+	printf(" 得分:%d",snake->score);
 
 
 }

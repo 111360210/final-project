@@ -33,8 +33,19 @@ typedef struct snake//放有關蛇的一切
 	int size;//蛇的身長
 	int speed;//移動速度
 	int score;//得分
+<<<<<<< HEAD
+	BODY body_last;//紀錄尾巴位置
+
+=======
 	char temp_key = 0;//前次方向
 	char key = 0;//本次方向
+<<<<<<< HEAD
+=======
+	int speed;//移動速度
+	BODY body_last;//紀錄尾巴位置
+	BODY cousor;//紀錄游標的座標
+>>>>>>> 79aae740b93c9accec3bdc5ae85c41ab03f56a5e
+>>>>>>> main
 }SNAKE;
 
 
@@ -125,6 +136,8 @@ void show_ui(SNAKE *snake)//顯示蛇與食物的函式
 	snake->coord.Y = snake->body_last.y;//注意要更改為食物的x,y座標 
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數) 
 	printf(" ");
+<<<<<<< HEAD
+=======
 	//實時顯示分數
 	snake->cousor.x = 64;
 	snake->cousor.y = 10;
@@ -152,6 +165,7 @@ void show_ui(SNAKE *snake)//顯示蛇與食物的函式
 	set_cursor(snake);
 	printf(" 得分:%d",snake->score);
 
+>>>>>>> 79aae740b93c9accec3bdc5ae85c41ab03f56a5e
 
 }
 void move_snake(SNAKE *snake)
@@ -159,7 +173,11 @@ void move_snake(SNAKE *snake)
 	//在尾巴座標更新前記錄其座標
 	snake->body_last.x = snake->list[snake->size - 1].x;
 	snake->body_last.y = snake->list[snake->size - 1].y;
+<<<<<<< HEAD
+
+=======
 	
+>>>>>>> 79aae740b93c9accec3bdc5ae85c41ab03f56a5e
 	//更新除了蛇頭外的蛇身座標 (前給後就不用另設暫存變數) 
 	for (int i = snake->size - 1; i > 0; i--)
 	{
@@ -187,6 +205,26 @@ void control_snake(SNAKE *snake)
 	{
 		snake->key = _getch();//獲取按鍵值
 	}
+<<<<<<< HEAD
+	switch (key)
+	{
+	case 'a':
+		snake->dx = -1;//蛇的方向向左 
+		snake->dy = 0;
+		break;
+	case 'w':
+		snake->dx = 0;//蛇的方向向上
+		snake->dy = -1;
+		break;
+	case 's':
+		snake->dx = 0;//蛇的方向向下 
+		snake->dy = 1;
+		break;
+	case 'd':
+		snake->dx = 1;//蛇的方向向右 
+		snake->dy = 0;
+		break;
+=======
 	if (snake->temp_key != 0 && snake->key != opposide_direction(snake->temp_key)) {
 		//判斷不為首次且不為前次方向倒向
 		switch (snake->key)
@@ -211,6 +249,11 @@ void control_snake(SNAKE *snake)
 			while (_getch() != 32); //按下空白暫停
 			break;
 		}
+<<<<<<< HEAD
+=======
+
+>>>>>>> 79aae740b93c9accec3bdc5ae85c41ab03f56a5e
+>>>>>>> main
 	}
 	if (snake->key != opposide_direction(snake->temp_key))
 		snake->temp_key = snake->key;		//紀錄前次方向
@@ -326,7 +369,11 @@ int main()
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cci);
 	init_wall();//印出遊戲邊界
 	SNAKE *snake = (SNAKE *)malloc(sizeof(SNAKE));//配置一個SNAKE大小的記憶體空間，且讓指標變數*snake指向這個位址 
+<<<<<<< HEAD
+	init_snake(snake);//因為上面那行的關係，只要傳入一個位址即可執行函式 
+=======
 	init_snake(snake);//因為上面那行的關係，只需要傳入一個位址便可執行函式 
+>>>>>>> 79aae740b93c9accec3bdc5ae85c41ab03f56a5e
 	show_ui(snake);//顯示介面 
 	start_game(snake);//開始遊戲 
 	system("pause");

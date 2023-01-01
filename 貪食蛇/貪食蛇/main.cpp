@@ -9,6 +9,7 @@
 #include <windows.h>//設置游標位置 
 #define WIDE 60
 #define HIGH 20
+#define scissors_popout 5
 using namespace std;
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 
@@ -22,25 +23,34 @@ typedef struct _body//放蛇的座標
 typedef struct snake//放有關蛇的一切 
 {
 	BODY list[WIDE*HIGH];//儲存身體的每一節座標，身體最長=地圖大小 
-	int size;//蛇的身長
 	BODY food;//因為食物也有座標，所以也利用BODY結構去儲存 
+	BODY scissors;//同以BODY結構處存剪刀座標
+	BODY body_last;//紀錄尾巴位置
+	BODY cousor;//紀錄游標的座標
 	COORD coord;//游標的位置(COORD是在windows.h裡定義的結構) 
 	int dx;//蛇向x軸移動的方向 
 	int dy;//蛇向y軸移動的方向
+	int size;//蛇的身長
+	int speed;//移動速度
 	int score;//得分
 	char temp_key = 0;//前次方向
 	char key = 0;//本次方向
-	int speed;//移動速度
-	BODY body_last;//紀錄尾巴位置
-	BODY cousor;//紀錄游標的座標
 }SNAKE;
 
-void init_food(SNAKE *snake)
+
+
+void init_food(SNAKE *snake)	//初始化食物座標 
 {
 	srand(time(NULL));//設置亂數種子 
-	//初始化食物座標 
-	snake->food.x = (rand() % (WIDE - 1)) + 2;
-	snake->food.y = (rand() % (HIGH - 1)) + 2;
+	snake->food.x = (rand() % (WIDE - 1)) + 1;
+	snake->food.y = (rand() % (HIGH - 1)) + 1;
+}
+
+void init_scissors(SNAKE *snake)	//初始化剪刀座標 
+{
+	srand(time(NULL));//設置亂數種子 
+	snake->scissors.x = (rand() % (WIDE - 1)) + 1;
+	snake->scissors.y = (rand() % (HIGH - 1)) + 1;
 }
 
 void init_snake(SNAKE *snake)
@@ -55,13 +65,15 @@ void init_snake(SNAKE *snake)
 	snake->size = 2;
 	//初始化食物的座標 
 	init_food(snake);
+	//初始化剪刀座標
+	init_scissors(snake);
 	//初始化蛇的移動方向
 	snake->dx = 1;
 	snake->dy = 0;
 	//初始化分數 
 	snake->score = 0;
 	//初始化速度
-	snake->speed = 800;
+	snake->speed = 300;
 	//初始化游標座標
 	snake->cousor.x = 0;
 	snake->cousor.y = 0;
@@ -90,7 +102,7 @@ void show_ui(SNAKE *snake)//顯示蛇與食物的函式
 		}
 		else
 		{
-			printf("*");//■會吃掉蛇頭的一個字元，在此改用*代替 
+			printf("*");//@會吃掉蛇頭的一個字元，在此改用*代替 
 		}
 
 	}
@@ -99,6 +111,15 @@ void show_ui(SNAKE *snake)//顯示蛇與食物的函式
 	snake->coord.Y = snake->food.y;//注意要更改為食物的x,y座標 
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數) 
 	printf("#");
+
+	if (snake->size > 3 && snake->score%scissors_popout ==0) {
+		//若大小大於3且分數為設定之倍數生成剪刀
+		snake->coord.X = snake->scissors.x;//注意X跟Y是大寫 
+		snake->coord.Y = snake->scissors.y;//注意要更改為食物的x,y座標 
+		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數)
+		printf("X");
+	}
+	
 	//移動後將尾巴前一個位置顯示成空白
 	snake->coord.X = snake->body_last.x;//注意X跟Y是大寫 
 	snake->coord.Y = snake->body_last.y;//注意要更改為食物的x,y座標 
@@ -118,6 +139,9 @@ void show_ui(SNAKE *snake)//顯示蛇與食物的函式
 	snake->cousor.y += 1;
 	set_cursor(snake);
 	printf("║Ⅲ.吃到「#」加一分       ║");
+	snake->cousor.y += 1;
+	set_cursor(snake);
+	printf("║Ⅲ.吃到「X」減速並縮短3格║");
 	snake->cousor.y += 1;
 	set_cursor(snake);
 	printf("║Ⅳ.分數越高速度越高      ║");
@@ -187,7 +211,6 @@ void control_snake(SNAKE *snake)
 			while (_getch() != 32); //按下空白暫停
 			break;
 		}
-
 	}
 	if (snake->key != opposide_direction(snake->temp_key))
 		snake->temp_key = snake->key;		//紀錄前次方向
@@ -218,26 +241,40 @@ void snake_eat_body(SNAKE *snake)
 void snake_eat_food(SNAKE *snake)
 {
 	if (snake->list[0].x == snake->food.x &&
-		snake->list[0].y == snake->food.y)
+		snake->list[0].y == snake->food.y)	//頭位置同為食物位置
 	{
-		//原本的食物被蛇頭覆蓋掉後需要生成新食物
-		init_food(snake);
-		//蛇身的長度增加
-		snake->size++;
-		//增加分數
-		snake->score++;
-		if (snake->speed > 300)
-			snake->speed -= 100;
+		init_food(snake);//新生成食物
+		snake->size++;//蛇長度增加
+		snake->score++;//分數增加
+		if (snake->speed > 200)		//吃到食物時
+			snake->speed -= 50;	//依區段提升速度
 		else if (snake->speed > 100)
-			snake->speed -= 50;
+			snake->speed -= 30;
 		else if (snake->speed > 10)
-			snake->speed -= 10;
-		else if (snake->speed > 0.5)
-			snake->speed -= 1.5;
+			snake->speed -= 20;
 	}
 }
+void snake_eat_scissors(SNAKE *snake)
+{
+	if (snake->size > 3 && snake->list[0].x == snake->scissors.x &&
+		snake->list[0].y == snake->scissors.y) {	
+		//頭位置同為剪刀位置且大小超過3
+		init_scissors(snake);	//新生成剪刀
+		snake->size -= 3;	//蛇長度剪短3
+		snake->speed += 200;	//速度放慢(延遲+0.2秒)
+		for (int i = snake->size; i < snake->size+4; i++)
+		{
+			snake->coord.X = snake->list[i].x;//注意X跟Y是大寫 
+			snake->coord.Y = snake->list[i].y;
+			SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), snake->coord);//設定游標位置(windows內建函數) 
+			printf(" ");	//將剪除部分設為空白
+		}
+	}
+		
+		
+}
 
-void init_wall()
+void init_wall()	//生成邊界
 {
 	for (int i = 0; i <= HIGH; i++)
 	{
@@ -249,6 +286,8 @@ void init_wall()
 		printf("\n");
 	}
 }
+
+
 
 void start_game(SNAKE *snake)
 {
@@ -269,6 +308,8 @@ void start_game(SNAKE *snake)
 		snake_eat_body(snake);
 		//蛇是否碰到食物 
 		snake_eat_food(snake);
+		//蛇是否碰到剪刀
+		snake_eat_scissors(snake);
 		//控制貪食蛇的速度
 		Sleep(snake->speed);
 	}
@@ -283,7 +324,6 @@ int main()
 	cci.dwSize = sizeof(cci);
 	cci.bVisible = FALSE;
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cci);
-
 	init_wall();//印出遊戲邊界
 	SNAKE *snake = (SNAKE *)malloc(sizeof(SNAKE));//配置一個SNAKE大小的記憶體空間，且讓指標變數*snake指向這個位址 
 	init_snake(snake);//因為上面那行的關係，只需要傳入一個位址便可執行函式 
